@@ -1,0 +1,1 @@
+scp -r root@194.195.217.101:/root/ansible-docker /c/Users/alexd/devops

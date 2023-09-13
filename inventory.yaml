@@ -1,0 +1,5 @@
+# inventory.yaml
+all:
+  hosts:
+    localhost:
+      ansible_connection: local

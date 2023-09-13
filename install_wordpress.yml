@@ -1,0 +1,49 @@
+---
+- name: Deploy WordPress with Docker
+  hosts: localhost # Update this with the appropriate target
+  become: yes  # Run tasks as sudo
+  vars:
+    ansible_python_interpreter: /opt/rh/rh-python36/root/usr/bin/python3
+
+  tasks:
+    - name: Create a custom Docker network
+      community.docker.docker_network:
+        name: wp_network
+        state: present
+
+    - name: Deploy MySQL container
+      community.docker.docker_container:
+        name: db
+        image: mysql:5.7
+        volumes:
+          - db:/var/lib/mysql
+        networks:
+          - name: wp_network
+        restart_policy: always
+        state: started
+        env:
+          MYSQL_ROOT_PASSWORD: "1"
+          MYSQL_DATABASE: "sampledb"
+          MYSQL_USER: "sampleuser"
+          MYSQL_PASSWORD: "samplepass"
+       
+
+    - name: Deploy WordPress container
+      community.docker.docker_container:
+        name: my_wordpress
+        image: wordpress:latest
+        env:
+          WORDPRESS_DB_HOST: "db"
+          WORDPRESS_DB_NAME: "sampledb"
+          WORDPRESS_DB_USER: "sampleuser"
+          WORDPRESS_DB_PASSWORD: "samplepass"  # Update with your password
+        volumes:
+          - /var/www/html:/var/www/html
+        networks:
+          - name: wp_network
+        ports:
+          - "8080:80"
+        links:
+          - "my_mysql:mysql"
+        restart_policy: always
+        state: started

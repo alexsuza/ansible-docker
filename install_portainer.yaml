@@ -1,0 +1,37 @@
+---
+- name: Install Portainer on CentOS 8
+  hosts: localhost
+  become: yes
+  vars:
+    ansible_python_interpreter: /usr/bin/python3
+  tasks:
+    # your tasks here
+
+
+    - name: Install required packages
+      pip:
+        name:
+          - requests
+      become: yes
+
+    - name: Pull the Portainer image
+      command:
+        cmd: docker pull portainer/portainer-ce:latest
+      become: yes
+
+    - name: Create the Portainer volume
+      command:
+        cmd: docker volume create portainer_data
+      become: yes
+
+    - name: Run Portainer container
+      community.docker.docker_container:
+        name: portainer
+        image: portainer/portainer-ce:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "9000:9000"
+        volumes:
+          - "/var/run/docker.sock:/var/run/docker.sock"
+          - "portainer_data:/data"

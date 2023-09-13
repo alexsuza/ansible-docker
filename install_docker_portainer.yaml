@@ -1,0 +1,66 @@
+---
+- name: Install Portainer on CentOS 7
+  hosts: localhost
+  become: yes
+  vars:
+    ansible_python_interpreter: /opt/rh/rh-python36/root/usr/bin/python3
+  pre_tasks:
+    - name: Install community.docker collection
+      ansible.builtin.command:
+        cmd: ansible-galaxy collection install community.docker
+      become: yes
+
+  tasks:
+    - name: Install required yum packages
+      command:
+        cmd: yum install -y yum-utils device-mapper-persistent-data lvm2
+      become: yes
+
+    - name: Add Docker repository
+      command:
+        cmd: yum-config-manager --add-repo https://download.docker.com/linux/centos/docker-ce.repo
+      become: yes
+
+    - name: Install Docker
+      command:
+        cmd: yum install -y docker-ce
+      become: yes
+
+    - name: Start and enable Docker service
+      systemd:
+        name: docker
+        state: started
+        enabled: yes
+
+    - name: Ensure pip is installed
+      command:
+        cmd: yum install -y python-pip
+      become: yes
+
+    - name: Install required Python packages
+      pip:
+        name:
+          - docker
+      become: yes
+
+    - name: Pull the Portainer image
+      command:
+        cmd: docker pull portainer/portainer-ce:latest
+      become: yes
+
+    - name: Create the Portainer volume
+      command:
+        cmd: docker volume create portainer_data
+      become: yes
+
+    - name: Run Portainer container
+      community.docker.docker_container:
+        name: portainer
+        image: portainer/portainer-ce:latest
+        state: started
+        restart_policy: always
+        ports:
+          - "9000:9000"
+        volumes:
+          - "/var/run/docker.sock:/var/run/docker.sock"
+          - "portainer_data:/data"

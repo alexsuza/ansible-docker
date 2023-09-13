@@ -1,0 +1,62 @@
+---
+- name: Remove all MySQL instances and installations from CentOS 8
+  hosts: localhost
+  become: yes
+  tasks:
+
+  - name: Stop MySQL service
+    systemd:
+      name: mysqld
+      state: stopped
+
+  - name: Uninstall MySQL packages
+    yum:
+      name:
+        - mysql-server
+        - mysql-client
+        - mysql-common
+        - mysql-libs
+      state: absent
+
+  - name: Remove MySQL user and group
+    user:
+      name: "{{ item }}"
+      state: absent
+      remove: yes
+    loop:
+      - mysql
+
+  - name: Delete MySQL data directory
+    file:
+      path: "/var/lib/mysql"
+      state: absent
+
+  - name: Delete MySQL configuration files
+    file:
+      path: "{{ item }}"
+      state: absent
+    loop:
+      - "/etc/my.cnf"
+      - "/etc/my.cnf.d"
+
+  - name: Remove MySQL lock files
+    file:
+      path: "{{ item }}"
+      state: absent
+    loop:
+      - "/var/run/mysqld"
+      - "/var/lock/subsys/mysql"
+      - "/var/lib/mysql/mysql.sock"
+      - "/var/lib/mysql/mysql.sock.lock"
+
+  - name: Remove any additional MySQL-related files
+    file:
+      path: "{{ item }}"
+      state: absent
+    loop:
+      - "/etc/systemd/system/mysqld.service"
+      - "/usr/lib/systemd/system/mysqld.service"
+
+  - name: Reload Systemd to apply changes
+    systemd:
+      daemon_reload: yes
